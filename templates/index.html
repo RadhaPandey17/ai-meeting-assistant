@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Video & Meeting Assistant | RAG Powered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="dark-theme">
+  <div class="app-container">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-brain-circuit"></i>
+        </div>
+        <div class="brand-text">
+          <h1>AI Meeting Assistant <span>RAG</span></h1>
+          <p class="subtitle">Video & Audio Intelligence with Hybrid Search & Chat Memory</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div id="statusBadge" class="status-badge status-ready">
+          <span class="status-dot"></span>
+          <span class="status-text">System Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN NAVIGATION TABS -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="input-tab">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>1. Media Source</span>
+      </button>
+      <button class="nav-tab" data-tab="dashboard-tab" id="dashboardTabBtn">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>2. Executive Summary</span>
+      </button>
+      <button class="nav-tab" data-tab="chat-tab" id="chatTabBtn">
+        <i class="fa-solid fa-comments"></i>
+        <span>3. AI Chat Assistant</span>
+      </button>
+    </nav>
+
+    <!-- CONTENT PANELS -->
+    <main class="content-area">
+      
+      <!-- TAB 1: MEDIA INPUT & PROCESSING -->
+      <section id="input-tab" class="tab-panel active">
+        <div class="grid-layout">
+          
+          <!-- YouTube URL Box -->
+          <div class="card glass-card">
+            <div class="card-header">
+              <i class="fa-brands fa-youtube icon-yt"></i>
+              <h3>YouTube Video Link</h3>
+            </div>
+            <p class="card-desc">Paste any public YouTube URL to automatically extract audio, summarize, and index for RAG.</p>
+            <div class="input-group">
+              <input type="url" id="ytUrlInput" placeholder="https://www.youtube.com/watch?v=..." />
+              <button id="ytSubmitBtn" class="btn btn-secondary">
+                <i class="fa-solid fa-bolt"></i> Load YouTube
+              </button>
+            </div>
+          </div>
+
+          <!-- Drag and Drop Upload Box -->
+          <div class="card glass-card">
+            <div class="card-header">
+              <i class="fa-solid fa-file-audio icon-upload"></i>
+              <h3>Upload Audio / Video / Document</h3>
+            </div>
+            
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="fileInput" accept="audio/*,video/*,.pdf,.doc,.docx,.txt,.md" class="file-input-hidden" />
+              <div class="dropzone-content">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <p class="drop-title">Drag & Drop your audio, video or document here</p>
+                <p class="drop-sub">or <span class="browse-link">browse device files</span></p>
+                <div class="supported-formats">
+                  <span class="badge">MP3</span>
+                  <span class="badge">WAV</span>
+                  <span class="badge">M4A</span>
+                  <span class="badge">MP4</span>
+                  <span class="badge">MKV</span>
+                  <span class="badge">PDF</span>
+                  <span class="badge">DOCX</span>
+                  <span class="badge">DOC</span>
+                  <span class="badge">TXT</span>
+                </div>
+              </div>
+              <div id="fileSelectedInfo" class="file-selected-info hidden">
+                <i class="fa-solid fa-file-lines"></i>
+                <span id="fileName">file.mp3</span>
+                <button type="button" id="removeFileBtn" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Local File System Browser Card -->
+          <div class="card glass-card span-full">
+            <div class="card-header">
+              <i class="fa-solid fa-folder-open icon-folder"></i>
+              <h3>Server File System Explorer</h3>
+              <button id="openFsModalBtn" class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-folder-tree"></i> Browse Server Files
+              </button>
+            </div>
+            <p class="card-desc">Select pre-stored media, documents (PDF / DOC / DOCX) or transcript files directly from your server's local file system.</p>
+            <div id="selectedFsPathDisplay" class="selected-fs-path hidden">
+              <i class="fa-solid fa-check-circle"></i> Selected Server File: <code id="fsPathText"></code>
+            </div>
+          </div>
+
+          <!-- Processing Settings & Launch Bar -->
+          <div class="card glass-card span-full settings-bar">
+            <div class="setting-group">
+              <label for="languageSelect">Transcription Engine & Language:</label>
+              <select id="languageSelect" class="form-select">
+                <option value="english" selected>Whisper (English - Local High Quality)</option>
+                <option value="hinglish">Sarvam AI (Hinglish / Hindi → English)</option>
+              </select>
+            </div>
+
+            <button id="processBtn" class="btn btn-primary btn-lg">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Process & Generate Intelligence
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Progress Overlay / Loading Card -->
+        <div id="progressContainer" class="progress-overlay hidden">
+          <div class="progress-card glass-card">
+            <div class="spinner"></div>
+            <h3 id="progressTitle">Extracting Audio & Processing...</h3>
+            <p id="progressSubtitle">Transcribing, summarizing, and indexing into BM25 + Vector Store.</p>
+            <div class="progress-bar-wrap">
+              <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 2: EXECUTIVE DASHBOARD & TRANSCRIPT -->
+      <section id="dashboard-tab" class="tab-panel">
+        <div class="dashboard-header card glass-card">
+          <div class="meeting-meta">
+            <h2 id="meetingTitle">No Meeting Processed Yet</h2>
+            <div class="meta-tags">
+              <span class="meta-tag" id="metaSource"><i class="fa-solid fa-link"></i> Source: N/A</span>
+              <span class="meta-tag" id="metaWords"><i class="fa-solid fa-font"></i> Words: 0</span>
+              <span class="meta-tag" id="metaLanguage"><i class="fa-solid fa-language"></i> Engine: Whisper</span>
+            </div>
+          </div>
+
+          <div class="export-actions">
+            <button id="exportTxtBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i> Export TXT</button>
+            <button id="exportJsonBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-code"></i> Export JSON</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Summary Card -->
+          <div class="card glass-card summary-card">
+            <div class="card-header">
+              <i class="fa-solid fa-list-check icon-summary"></i>
+              <h3>Executive Meeting Summary</h3>
+            </div>
+            <div id="summaryContent" class="summary-body markdown-body">
+              <p class="placeholder-text">Process a YouTube video or audio file to view key decisions, action items, and executive summary.</p>
+            </div>
+          </div>
+
+          <!-- Transcript Viewer -->
+          <div class="card glass-card transcript-card">
+            <div class="card-header space-between">
+              <div class="title-with-icon">
+                <i class="fa-solid fa-quote-left icon-transcript"></i>
+                <h3 id="transcriptTitle">Full Transcript</h3>
+              </div>
+              <div class="transcript-controls">
+                <input type="text" id="transcriptSearch" placeholder="Search transcript..." class="search-input" />
+                <button id="copyTranscriptBtn" class="btn btn-outline btn-sm"><i class="fa-solid fa-copy"></i> Copy</button>
+              </div>
+            </div>
+            <div id="transcriptContent" class="transcript-body">
+              <p class="placeholder-text">Full transcribed speech will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 3: RAG AI CHAT ASSISTANT -->
+      <section id="chat-tab" class="tab-panel">
+        <div class="chat-container card glass-card">
+          <div class="chat-header">
+            <div class="chat-title">
+              <i class="fa-solid fa-robot icon-chat"></i>
+              <div>
+                <h3>RAG Meeting Assistant</h3>
+                <span class="chat-status"><i class="fa-solid fa-circle-check"></i> Hybrid Search (BM25 + Chroma) Enabled</span>
+              </div>
+            </div>
+            <button id="clearMemoryBtn" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-broom"></i> Reset Chat Memory
+            </button>
+          </div>
+
+          <!-- Suggested Prompt Chips -->
+          <div class="prompt-suggestions">
+            <button class="chip" data-prompt="What were the main decisions made in this meeting?">💡 Key Decisions</button>
+            <button class="chip" data-prompt="List all action items and assignees mentioned.">📌 Action Items</button>
+            <button class="chip" data-prompt="Summarize any risks or challenges discussed.">⚠️ Risks & Issues</button>
+            <button class="chip" data-prompt="What are the next steps outlined?">🚀 Next Steps</button>
+          </div>
+
+          <!-- Messages Container -->
+          <div id="chatMessages" class="chat-messages">
+            <div class="message message-system">
+              <div class="message-bubble">
+                 👋 Welcome! Process a meeting, audio or document (PDF / DOCX) to start asking contextual questions using Hybrid BM25 & Vector RAG with conversational memory.
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Bar -->
+          <div class="chat-input-bar">
+            <input type="text" id="chatInput" placeholder="Ask anything about the meeting..." autocomplete="off" />
+            <button id="sendChatBtn" class="btn btn-primary">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SERVER FILE SYSTEM EXPLORER MODAL -->
+  <div id="fsModal" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-folder-tree"></i> Server File Explorer</h3>
+        <button id="closeFsModalBtn" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="breadcrumb" id="fsBreadcrumb">
+          <span>Root:</span> <code id="currentPathText">c:\100rabh\AI-Video-Meeting-Assistant-with-RAG</code>
+        </div>
+        
+        <div id="fsDirectoryList" class="fs-list">
+          <div class="loading-spinner-sm">Loading files...</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelFsBtn" class="btn btn-secondary btn-sm">Cancel</button>
+        <button id="confirmFsBtn" class="btn btn-primary btn-sm" disabled>Use Selected File</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
